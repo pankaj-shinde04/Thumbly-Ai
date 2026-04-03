@@ -1,73 +1,157 @@
-# Welcome to your Lovable project
+# Thumbly AI - Frontend
 
-## Project info
+Frontend application for Thumbly AI - AI-powered thumbnail generator for content creators.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Project Overview
 
-## How can I edit this code?
+Thumbly AI is a modern web application that helps content creators generate stunning thumbnails using artificial intelligence. The frontend provides an intuitive interface for users to create, manage, and customize AI-generated thumbnails for various platforms.
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+- 🎨 **AI Thumbnail Generation** - Generate thumbnails using advanced AI models
+- 📱 **Multi-Platform Support** - Create thumbnails for YouTube, Instagram posts, and Instagram reels
+- 💬 **Interactive Chat Interface** - Refine thumbnails through conversational AI
+- 🖼️ **Asset Management** - Upload and manage images and design assets
+- 📊 **Session History** - Track and manage all your design sessions
+- 🌙 **Dark/Light Mode** - Beautiful UI with theme switching
+- 🎯 **Real-time Preview** - See changes instantly as you work
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with custom plum/pink theme
+- **UI Components**: shadcn/ui
+- **State Management**: React Context API
+- **HTTP Client**: React Query (TanStack Query)
+- **Routing**: React Router DOM
+- **Icons**: Lucide React
+- **Fonts**: Inter font family
 
-**Use your preferred IDE**
+## Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 16+ 
+- npm 8+
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Getting Started
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd thumbly-ai/client
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Available Scripts
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Start development server
+npm run dev
 
-**Use GitHub Codespaces**
+# Build for production
+npm run build
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Preview production build
+npm run preview
 
-## What technologies are used for this project?
+# Run linting
+npm run lint
 
-This project is built with:
+# Run type checking
+npm run type-check
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Project Structure
 
-## How can I deploy this project?
+```
+client/
+├── public/                 # Static assets
+├── src/
+│   ├── components/         # Reusable UI components
+│   │   ├── ui/            # shadcn/ui components
+│   │   └── common/        # Custom components
+│   ├── pages/             # Page components
+│   │   ├── Dashboard.tsx  # Main dashboard
+│   │   ├── Login.tsx      # Authentication
+│   │   └── ...
+│   ├── contexts/          # React contexts
+│   │   └── AuthContext.tsx
+│   ├── hooks/             # Custom hooks
+│   ├── lib/               # Utility functions
+│   ├── styles/            # Global styles
+│   │   └── index.css      # Tailwind + custom theme
+│   └── types/             # TypeScript type definitions
+├── package.json
+├── tailwind.config.ts     # Tailwind configuration
+├── tsconfig.json          # TypeScript configuration
+└── vite.config.ts         # Vite configuration
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## API Integration
 
-## Can I connect a custom domain to my Lovable project?
+The frontend connects to the Thumbly AI backend API:
 
-Yes, you can!
+- **Base URL**: `http://localhost:4000/api/v1` (development)
+- **Authentication**: JWT Bearer tokens
+- **Content-Type**: `application/json`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Key Endpoints
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- `POST /auth/login` - User authentication
+- `POST /auth/signup` - User registration
+- `GET /sessions` - Get user sessions
+- `POST /sessions` - Create new design session
+- `POST /ai/generate` - Generate AI thumbnails
+- `POST /assets/upload` - Upload images
+
+## Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+VITE_API_BASE_URL=http://localhost:4000/api/v1
+VITE_APP_NAME=Thumbly AI
+VITE_APP_VERSION=1.0.0
+```
+
+## Theme Customization
+
+The application uses a custom plum and pink color palette:
+
+- **Primary**: Rich plum purple
+- **Accent**: Soft pink/rose  
+- **Backgrounds**: Off-white (light) and gray plum (dark)
+- **Gradients**: Plum to pink flows
+- **Glow Effects**: Custom purple and pink glows
+
+Theme colors are defined in `src/styles/index.css` and `tailwind.config.ts`.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support and questions:
+- 📧 Email: support@thumbly-ai.com
+- 🐛 Issues: [GitHub Issues](https://github.com/your-org/thumbly-ai/issues)
+- 📖 Documentation: [Project Wiki](https://github.com/your-org/thumbly-ai/wiki)
+
+---
+
+Built with ❤️ for content creators everywhere
