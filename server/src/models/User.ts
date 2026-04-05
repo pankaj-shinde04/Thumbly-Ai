@@ -9,6 +9,7 @@ export interface IUser extends Document {
   avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>({
@@ -91,4 +92,10 @@ userSchema.statics.findByIdWithPassword = function(id: string) {
   return this.findById(id).select('+passwordHash');
 };
 
-export const User = mongoose.model<IUser>('User', userSchema);
+// Static method types
+interface UserModel extends mongoose.Model<IUser> {
+  findByEmail(email: string): Promise<IUser | null>;
+  findByIdWithPassword(email: string): Promise<IUser | null>;
+}
+
+export const User = mongoose.model<IUser, UserModel>('User', userSchema);
