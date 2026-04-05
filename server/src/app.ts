@@ -7,11 +7,9 @@ import { errorHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
 import { requestId } from './middlewares/requestId';
 
-// Import routes (will be created later)
-// import authRoutes from './modules/auth/routes';
-// import sessionRoutes from './modules/sessions/routes';
-// import assetRoutes from './modules/assets/routes';
-// import aiRoutes from './modules/ai/routes';
+// Import routes
+import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
 
 const app = express();
 
@@ -20,7 +18,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: config.cors.origin,
+  origin: ['http://localhost:5173', 'http://localhost:8080'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -48,16 +46,8 @@ app.get('/health', (req: any, res: any) => {
 });
 
 // API routes
-app.use('/api/v1', (req: any, res: any, next: any) => {
-  res.setHeader('Content-Type', 'application/json');
-  next();
-});
-
-// Placeholder routes (will be implemented later)
-// app.use('/api/v1/auth', authRoutes);
-// app.use('/api/v1/sessions', sessionRoutes);
-// app.use('/api/v1/assets', assetRoutes);
-// app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/user', userRoutes);
 
 // 404 handler
 app.use('*', (req: any, res: any) => {
