@@ -10,6 +10,7 @@ import { requestId } from './middlewares/requestId';
 // Import routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
+import sessionRoutes from './routes/sessions';
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:8080'],
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -48,6 +49,7 @@ app.get('/health', (req: any, res: any) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/sessions', sessionRoutes);
 
 // 404 handler
 app.use('*', (req: any, res: any) => {

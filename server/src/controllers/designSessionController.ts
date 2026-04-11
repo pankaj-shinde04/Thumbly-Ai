@@ -73,14 +73,34 @@ export const createSession = async (req: Request, res: Response) => {
 export const getUserSessions = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-    const { status } = req.query;
+    const { q, platform, page = '1', limit = '10' } = req.query;
 
-    let sessions;
-    if (status && ['active', 'archived'].includes(status as string)) {
-      sessions = await DesignSession.find({ userId, status: status as string }).sort({ createdAt: -1 });
-    } else {
-      sessions = await DesignSession.findByUserId(userId);
+    // Parse pagination
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query
+    let query: any = { userId, status: { $ne: 'deleted' } };
+
+    // Add search filter
+    if (q) {
+      query.title = { $regex: q, $options: 'i' };
     }
+
+    // Add platform filter
+    if (platform) {
+      query.platform = platform;
+    }
+
+    // Get total count for pagination
+    const total = await DesignSession.countDocuments(query);
+
+    // Get sessions with pagination
+    const sessions = await DesignSession.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
     res.json({
       data: {
@@ -92,7 +112,15 @@ export const getUserSessions = async (req: Request, res: Response) => {
           status: session.status,
           createdAt: session.createdAt,
           updatedAt: session.updatedAt
-        }))
+        })),
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum),
+          hasNext: pageNum * limitNum < total,
+          hasPrev: pageNum > 1
+        }
       }
     });
 
@@ -124,7 +152,17 @@ export const getSession = async (req: Request, res: Response) => {
     }
 
     // Check if user owns the session
-    if (session.userId._id.toString() !== userId) {
+    if (!session.userId) {
+      return res.status(403).json({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Access denied'
+        }
+      });
+    }
+    
+    const sessionUserId = (session.userId as any)._id?.toString() || session.userId.toString();
+    if (sessionUserId !== userId) {
       return res.status(403).json({
         error: {
           code: 'FORBIDDEN',
@@ -137,7 +175,7 @@ export const getSession = async (req: Request, res: Response) => {
       data: {
         session: {
           id: session._id,
-          userId: session.userId._id,
+          userId: sessionUserId,
           title: session.title,
           platform: session.platform,
           status: session.status,

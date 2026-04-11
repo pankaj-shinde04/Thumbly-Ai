@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import AuthTest from "./components/AuthTest";
+import SessionsTest from "./components/SessionsTest";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/test-auth" element={<AuthTest />} />
+              <Route path="/test-sessions" element={<SessionsTest />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

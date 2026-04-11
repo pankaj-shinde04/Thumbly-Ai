@@ -3,7 +3,7 @@ import { config } from './config/env';
 import { logger } from './lib/logger';
 import mongoose from 'mongoose';
 
-const PORT = config.port || 4000;
+const PORT = config.port || 4001;
 
 // Connect to MongoDB - REPLACE THIS WITH YOUR ATLAS CONNECTION STRING
 const connectionString = 'mongodb+srv://pankajshinde2434_db_user:Pass%40123@cluster0.rytkgff.mongodb.net/?appName=Cluster0';
