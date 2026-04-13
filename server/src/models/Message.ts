@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   sessionId: string;
   role: 'user' | 'assistant';
   content: string;
+  imageAssetId?: string;
   metadata?: object;
   createdAt: Date;
   updatedAt: Date;
@@ -26,6 +27,11 @@ const messageSchema = new Schema<IMessage>({
     required: [true, 'Content is required'],
     trim: true,
     maxlength: [5000, 'Content cannot exceed 5000 characters']
+  },
+  imageAssetId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Asset',
+    required: false
   },
   metadata: {
     type: Schema.Types.Mixed,

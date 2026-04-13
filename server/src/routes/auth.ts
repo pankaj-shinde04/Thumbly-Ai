@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { signup, login, getMe, logout } from '../controllers/authController';
+import { signup, login, getMe, logout, refreshAccessToken } from '../controllers/authController';
 import { authenticate } from '../middlewares/auth';
 
 const router = Router();
@@ -30,10 +30,17 @@ const validateLogin = [
     .withMessage('Password is required')
 ];
 
+const validateRefresh = [
+  body('refreshToken')
+    .notEmpty()
+    .withMessage('Refresh token is required')
+];
+
 // Routes
 router.post('/signup', validateSignup, signup);
 router.post('/login', validateLogin, login);
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
+router.post('/refresh', validateRefresh, refreshAccessToken);
 
 export default router;
