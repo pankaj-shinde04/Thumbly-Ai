@@ -11,6 +11,8 @@ import { requestId } from './middlewares/requestId';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import sessionRoutes from './routes/sessions';
+import messageRoutes from './routes/messages';
+import aiRoutes from './routes/ai';
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.get('/health', (req: any, res: any) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
+app.use('/api/v1/sessions', messageRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req: any, res: any) => {

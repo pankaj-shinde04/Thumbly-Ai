@@ -242,3 +242,65 @@ export const logout = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Refresh access token
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Refresh token is required'
+        }
+      });
+    }
+
+    // Verify refresh token
+    let decoded: any;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret');
+    } catch (error) {
+      return res.status(401).json({
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired refresh token'
+        }
+      });
+    }
+
+    // Get user
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    // Generate new access token
+    const newAccessToken = generateToken(user._id);
+
+    logger.info('Access token refreshed successfully', {
+      userId: user._id
+    });
+
+    res.json({
+      data: {
+        accessToken: newAccessToken
+      }
+    });
+
+  } catch (error: any) {
+    logger.error('Refresh token error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to refresh token'
+      }
+    });
+  }
+};
