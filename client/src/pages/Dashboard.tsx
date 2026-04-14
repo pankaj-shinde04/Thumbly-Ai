@@ -29,7 +29,7 @@ export interface DesignSession {
 }
 
 const Dashboard = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [activeView, setActiveView] = useState<'chat' | 'gallery'>('chat');
@@ -38,25 +38,90 @@ const Dashboard = () => {
   const [editingImage, setEditingImage] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const API_BASE_URL = 'http://localhost:4001/api/v1';
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
+      return;
     }
+    fetchSessions();
   }, [isAuthenticated, navigate]);
 
-  const createNewSession = () => {
-    const newSession: DesignSession = {
-      id: Date.now().toString(),
-      title: 'New Design',
-      messages: [],
-      platform: 'youtube',
-      createdAt: new Date(),
-    };
-    setSessions([newSession, ...sessions]);
-    setActiveSessionId(newSession.id);
-    setActiveView('chat');
-    setMobileMenuOpen(false);
+  const fetchSessions = async () => {
+    try {
+      const token = localStorage.getItem('thumbly_access_token');
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const backendSessions = data.data.sessions || [];
+        const mappedSessions: DesignSession[] = backendSessions.map((session: any) => ({
+          id: session.id,
+          title: session.title,
+          messages: [],
+          platform: session.platform || 'youtube',
+          thumbnail: session.thumbnailAssetId,
+          createdAt: new Date(session.createdAt)
+        }));
+        setSessions(mappedSessions);
+        if (mappedSessions.length > 0 && !activeSessionId) {
+          setActiveSessionId(mappedSessions[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createNewSession = async () => {
+    try {
+      const token = localStorage.getItem('thumbly_access_token');
+      console.log('Creating session...');
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'New Design',
+          platform: 'youtube'
+        })
+      });
+
+      console.log('Session creation response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Session creation response data:', data);
+        const newSession: DesignSession = {
+          id: data.data.session.id,
+          title: data.data.session.title,
+          messages: [],
+          platform: data.data.session.platform || 'youtube',
+          createdAt: new Date(data.data.session.createdAt)
+        };
+        console.log('Created new session with ID:', newSession.id);
+        setSessions([newSession, ...sessions]);
+        setActiveSessionId(newSession.id);
+        setActiveView('chat');
+        setMobileMenuOpen(false);
+      } else {
+        console.error('Failed to create session:', await response.json());
+      }
+    } catch (error) {
+      console.error('Failed to create session:', error);
+    }
   };
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
@@ -67,15 +132,51 @@ const Dashboard = () => {
     );
   };
 
-  const deleteSession = (sessionId: string) => {
-    setSessions(sessions.filter((s) => s.id !== sessionId));
-    if (activeSessionId === sessionId) {
-      setActiveSessionId(sessions[0]?.id || null);
+  const deleteSession = async (sessionId: string) => {
+    // Don't delete if session ID is invalid
+    if (!sessionId || sessionId === 'undefined' || sessionId.length !== 24) {
+      // Just remove from local state without logging error
+      setSessions(sessions.filter((s) => s.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(sessions[0]?.id || null);
+      }
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('thumbly_access_token');
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSessions(sessions.filter((s) => s.id !== sessionId));
+        if (activeSessionId === sessionId) {
+          setActiveSessionId(sessions[0]?.id || null);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
     }
   };
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   const sidebarContent = (

@@ -239,10 +239,10 @@ const DashboardSidebar = ({
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>My Profile</DropdownMenuItem>
-            <DropdownMenuItem>Usage & Credits</DropdownMenuItem>
+            <DropdownMenuItem key="profile">My Profile</DropdownMenuItem>
+            <DropdownMenuItem key="credits">Usage & Credits</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <DropdownMenuItem key="logout" onClick={handleLogout} className="text-destructive">
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

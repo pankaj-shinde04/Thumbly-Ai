@@ -15,12 +15,51 @@ interface ChatAreaProps {
 const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: ChatAreaProps) => {
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const API_BASE_URL = 'http://localhost:4001/api/v1';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session?.messages]);
+
+  // Temporarily disable message fetching to focus on AI generation
+  // useEffect(() => {
+  //   if (session?.id) {
+  //     fetchMessages(session.id);
+  //   }
+  // }, [session?.id]);
+
+  const fetchMessages = async (sessionId: string) => {
+    try {
+      setLoadingMessages(true);
+      const token = localStorage.getItem('thumbly_access_token');
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const backendMessages = data.data.messages || [];
+        const mappedMessages: Message[] = backendMessages.map((msg: any) => ({
+          id: msg._id,
+          role: msg.role,
+          content: msg.content,
+          image: msg.imageAssetId,
+          platform: msg.metadata?.platform,
+        }));
+        onUpdateSession({ messages: mappedMessages });
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,22 +93,74 @@ const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: Ch
     setInput('');
     setIsGenerating(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call real AI generation API
+      const token = localStorage.getItem('thumbly_access_token');
+      const requestBody = {
+        sessionId: session?.id,
+        prompt: input,
+        platform
+      };
+      console.log('Session object:', session);
+      console.log('Session ID:', session?.id);
+      console.log('Sending AI generation request:', requestBody);
+      
+      if (!session?.id) {
+        throw new Error('Session ID is undefined');
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/ai/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('AI generation response:', data);
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `Generated ${platform.replace('-', ' ')} thumbnail based on: "${input}"`,
+          platform,
+          image: data.data.asset.url,
+        };
+
+        onUpdateSession({
+          messages: [...newMessages, aiMessage],
+          thumbnail: aiMessage.image,
+        });
+      } else {
+        const errorData = await response.json();
+        console.error('AI generation failed:', errorData);
+        const errorMessage = errorData.error?.message || errorData.message || 'Unknown error';
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `Failed to generate image: ${errorMessage}`,
+          platform,
+        };
+        onUpdateSession({
+          messages: [...newMessages, aiMessage],
+        });
+      }
+    } catch (error) {
+      console.error('AI generation error:', error);
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I'll create a ${platform.replace('-', ' ')} thumbnail based on your description: "${input}"\n\nHere's what I've generated:`,
+        content: `Failed to generate image: Network error`,
         platform,
-        image: `https://picsum.photos/seed/${Date.now()}/800/450`, // Placeholder
       };
-
       onUpdateSession({
         messages: [...newMessages, aiMessage],
-        thumbnail: aiMessage.image,
       });
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

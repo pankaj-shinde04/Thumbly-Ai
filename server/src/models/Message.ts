@@ -29,8 +29,7 @@ const messageSchema = new Schema<IMessage>({
     maxlength: [5000, 'Content cannot exceed 5000 characters']
   },
   imageAssetId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Asset',
+    type: String,
     required: false
   },
   metadata: {
