@@ -97,7 +97,11 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
           return images;
         }
       } catch (modelError: any) {
-        logger.error(`Model ${modelName} failed:`, modelError.message);
+        logger.error(`Model ${modelName} failed:`, {
+          message: modelError.message,
+          stack: modelError.stack,
+          details: JSON.stringify(modelError, null, 2)
+        });
         lastError = modelError;
       }
     }
