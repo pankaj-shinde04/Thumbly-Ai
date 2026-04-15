@@ -19,7 +19,7 @@ interface Config {
     refreshTokenTtl: string;
   };
   storage: {
-    driver: 'local' | 's3';
+    driver: 'local' | 's3' | 'cloudinary';
     local: {
       uploadDir: string;
     };
@@ -28,6 +28,12 @@ interface Config {
       region: string;
       accessKey: string;
       secretKey: string;
+    };
+    cloudinary?: {
+      cloudName: string;
+      apiKey: string;
+      apiSecret: string;
+      uploadPreset: string;
     };
   };
   ai: {
@@ -64,7 +70,7 @@ const config: Config = {
   },
   
   storage: {
-    driver: (process.env.STORAGE_DRIVER as 'local' | 's3') || 'local',
+    driver: (process.env.STORAGE_DRIVER as 'local' | 's3' | 'cloudinary') || 'local',
     local: {
       uploadDir: process.env.UPLOAD_DIR || 'uploads',
     },
@@ -73,6 +79,12 @@ const config: Config = {
       region: process.env.S3_REGION || 'us-east-1',
       accessKey: process.env.S3_ACCESS_KEY || '',
       secretKey: process.env.S3_SECRET_KEY || '',
+    } : undefined,
+    cloudinary: process.env.STORAGE_DRIVER === 'cloudinary' ? {
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+      apiKey: process.env.CLOUDINARY_API_KEY || '',
+      apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+      uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || '',
     } : undefined,
   },
   

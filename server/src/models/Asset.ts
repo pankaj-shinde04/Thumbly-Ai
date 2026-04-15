@@ -9,6 +9,11 @@ export interface IAsset extends Document {
   mimeType: string;
   size: number;
   url: string;
+  // Cloudinary fields
+  publicId?: string;
+  imageUrl?: string;
+  prompt?: string;
+  type?: 'thumbnail' | 'asset' | 'profile' | 'other';
   s3Key?: string;
   metadata?: object;
   createdAt: Date;
@@ -48,6 +53,24 @@ const assetSchema = new Schema<IAsset>({
   url: {
     type: String,
     required: [true, 'File URL is required']
+  },
+  // Cloudinary fields
+  publicId: {
+    type: String,
+    required: false
+  },
+  imageUrl: {
+    type: String,
+    required: false
+  },
+  prompt: {
+    type: String,
+    required: false
+  },
+  type: {
+    type: String,
+    enum: ['thumbnail', 'asset', 'profile', 'other'],
+    required: false
   },
   s3Key: {
     type: String,

@@ -83,7 +83,7 @@ const Dashboard = () => {
     }
   };
 
-  const createNewSession = async () => {
+  const createNewSession = async (platform: string = 'youtube') => {
     try {
       const token = localStorage.getItem('thumbly_access_token');
       console.log('Creating session...');
@@ -95,7 +95,7 @@ const Dashboard = () => {
         },
         body: JSON.stringify({
           title: 'New Design',
-          platform: 'youtube'
+          platform
         })
       });
 

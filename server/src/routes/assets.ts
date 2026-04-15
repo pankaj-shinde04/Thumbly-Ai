@@ -3,7 +3,8 @@ import multer from 'multer';
 import { 
   uploadAsset, 
   getAsset, 
-  downloadAsset 
+  downloadAsset,
+  deleteAsset
 } from '../controllers/assetController';
 import { authenticate } from '../middlewares/auth';
 
@@ -33,5 +34,6 @@ const upload = multer({
 router.post('/upload', upload.single('file'), uploadAsset);
 router.get('/:id', getAsset);
 router.get('/:id/download', downloadAsset);
+router.delete('/:id', deleteAsset);
 
 export default router;

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 interface ChatAreaProps {
   session: DesignSession | undefined;
   onUpdateSession: (updates: Partial<DesignSession>) => void;
-  onCreateSession: () => void;
+  onCreateSession: (platform?: string) => void;
   onEditImage: (url: string) => void;
 }
 
@@ -16,6 +16,7 @@ const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: Ch
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<'youtube' | 'instagram-post' | 'instagram-reel'>('youtube');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const API_BASE_URL = 'http://localhost:4001/api/v1';
@@ -204,29 +205,51 @@ const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: Ch
           <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
             Describe the thumbnail or Instagram cover you want to create, and let AI do the rest.
           </p>
-          <Button variant="gradient" size="lg" onClick={onCreateSession}>
+
+          {/* Platform Selector */}
+          <div className="mb-6">
+            <label className="text-sm font-medium text-foreground mb-2 block">Select Platform</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedPlatform('youtube')}
+                className={`flex-1 p-3 rounded-lg border transition-colors ${
+                  selectedPlatform === 'youtube'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:bg-muted'
+                }`}
+              >
+                <Youtube className="w-5 h-5 mx-auto mb-1" />
+                <span className="text-xs">YouTube</span>
+              </button>
+              <button
+                onClick={() => setSelectedPlatform('instagram-post')}
+                className={`flex-1 p-3 rounded-lg border transition-colors ${
+                  selectedPlatform === 'instagram-post'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:bg-muted'
+                }`}
+              >
+                <Instagram className="w-5 h-5 mx-auto mb-1" />
+                <span className="text-xs">Post</span>
+              </button>
+              <button
+                onClick={() => setSelectedPlatform('instagram-reel')}
+                className={`flex-1 p-3 rounded-lg border transition-colors ${
+                  selectedPlatform === 'instagram-reel'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:bg-muted'
+                }`}
+              >
+                <Instagram className="w-5 h-5 mx-auto mb-1" />
+                <span className="text-xs">Reel Cover</span>
+              </button>
+            </div>
+          </div>
+
+          <Button variant="gradient" size="lg" onClick={() => onCreateSession(selectedPlatform)}>
             <Plus className="w-5 h-5" />
             New Design
           </Button>
-
-          <div className="mt-6 md:mt-8 grid grid-cols-1 gap-2 md:gap-3">
-            {[
-              '"YouTube thumbnail for finance video"',
-              '"Instagram post for coffee brand"',
-              '"Reel cover for podcast episode"',
-            ].map((example, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  onCreateSession();
-                  setInput(example.replace(/"/g, ''));
-                }}
-                className="p-3 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-left"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     );

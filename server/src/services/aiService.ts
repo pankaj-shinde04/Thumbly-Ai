@@ -44,81 +44,19 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
 
     logger.info(`Generating image with prompt: ${enhancedPrompt}`);
 
-    // Try different model names for Google Imagen
-    const modelNames = [
-      'imagen-3.0-generate-001',
-      'imagen-3.0-generate-preview',
-      'imagegeneration@006',
-      'imagen-2.0-generate-001'
-    ];
-
-    let images: GeneratedImage[] = [];
-    let lastError: any = null;
-
-    for (const modelName of modelNames) {
-      try {
-        logger.info(`Trying model: ${modelName}`);
-        
-        const model = vertexAI.getGenerativeModel({
-          model: modelName
-        });
-
-        // Try image generation API
-        const result = await model.generateContent({
-          contents: [{
-            role: 'user',
-            parts: [{ text: enhancedPrompt }]
-          }],
-          generationConfig: {
-            temperature: 0.4,
-            topK: 32,
-            topP: 1,
-            maxOutputTokens: 2048,
-          }
-        });
-
-        // Extract image from response
-        if (result.response.candidates && result.response.candidates.length > 0) {
-          const candidate = result.response.candidates[0];
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData && part.inlineData.data) {
-                images.push({
-                  url: `data:image/png;base64,${part.inlineData.data}`,
-                  revisedPrompt: enhancedPrompt
-                });
-              }
-            }
-          }
-        }
-
-        if (images.length > 0) {
-          logger.info(`Successfully generated ${images.length} image(s) using model: ${modelName}`);
-          return images;
-        }
-      } catch (modelError: any) {
-        logger.error(`Model ${modelName} failed:`, {
-          message: modelError.message,
-          stack: modelError.stack,
-          details: JSON.stringify(modelError, null, 2)
-        });
-        lastError = modelError;
-      }
-    }
-
-    // If all models failed, return a placeholder for testing
-    if (images.length === 0) {
-      logger.error('All Google Imagen models failed. Using placeholder.');
-      logger.error('Last error:', lastError?.message);
-      
-      // Return a placeholder image for testing
+    // Skip Google Cloud authentication for now - use placeholder for Cloudinary testing
+    logger.info('Skipping Google Cloud authentication - using placeholder for Cloudinary testing');
+    
+    // Return placeholder image for testing Cloudinary integration
+    const images: GeneratedImage[] = [];
+    for (let i = 0; i < n; i++) {
       images.push({
-        url: `https://picsum.photos/1024/1024?random=${Date.now()}`,
+        url: `https://picsum.photos/1024/1024?random=${Date.now() + i}`,
         revisedPrompt: enhancedPrompt
       });
     }
 
-    logger.info(`Generated ${images.length} image(s)`);
+    logger.info(`Generated ${images.length} placeholder image(s) for Cloudinary testing`);
     return images;
 
   } catch (error: any) {

@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { Asset } from '../models/Asset';
 import { logger } from '../lib/logger';
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
+import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService';
 
 // Upload endpoint
 export const uploadAsset = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
     const sessionId = req.body.sessionId;
+    const type = req.body.type || 'thumbnail';
+    const prompt = req.body.prompt;
 
     if (!req.file) {
       return res.status(400).json({
@@ -20,41 +20,44 @@ export const uploadAsset = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname);
-    const assetId = crypto.randomBytes(16).toString('hex');
-    const filename = `${assetId}${ext}`;
+    logger.info('Uploading asset to Cloudinary', {
+      userId,
+      sessionId,
+      type,
+      prompt
+    });
 
-    // Determine storage path
-    const uploadDir = path.join(process.cwd(), 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    // Upload to Cloudinary
+    const cloudinaryResult = await uploadToCloudinary({
+      file: req.file.buffer,
+      userId,
+      type: type as 'thumbnail' | 'asset' | 'profile' | 'other',
+      prompt
+    });
 
-    const filePath = path.join(uploadDir, filename);
-
-    // Save file to local storage
-    fs.writeFileSync(filePath, req.file.buffer);
-
-    // Create asset record
+    // Create asset record in MongoDB
     const asset = new Asset({
       userId,
       sessionId,
-      filename,
+      filename: cloudinaryResult.public_id,
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
-      size: req.file.size,
-      url: `/assets/${assetId}`,
+      size: cloudinaryResult.bytes,
+      url: cloudinaryResult.secure_url,
+      // Cloudinary fields
+      publicId: cloudinaryResult.public_id,
+      imageUrl: cloudinaryResult.secure_url,
+      prompt,
+      type,
       metadata: req.body.metadata || {}
     });
 
     await asset.save();
 
-    logger.info('Asset uploaded', {
+    logger.info('Asset uploaded successfully', {
       assetId: asset._id,
       userId,
-      filename,
-      size: asset.size
+      publicId: cloudinaryResult.public_id
     });
 
     res.status(201).json({
@@ -68,6 +71,10 @@ export const uploadAsset = async (req: Request, res: Response) => {
           mimeType: asset.mimeType,
           size: asset.size,
           url: asset.url,
+          publicId: asset.publicId,
+          imageUrl: asset.imageUrl,
+          prompt: asset.prompt,
+          type: asset.type,
           metadata: asset.metadata,
           createdAt: asset.createdAt,
           updatedAt: asset.updatedAt
@@ -79,7 +86,7 @@ export const uploadAsset = async (req: Request, res: Response) => {
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to upload asset'
+        message: error.message || 'Failed to upload asset'
       }
     });
   }
@@ -122,6 +129,10 @@ export const getAsset = async (req: Request, res: Response) => {
           mimeType: asset.mimeType,
           size: asset.size,
           url: asset.url,
+          publicId: asset.publicId,
+          imageUrl: asset.imageUrl,
+          prompt: asset.prompt,
+          type: asset.type,
           metadata: asset.metadata,
           createdAt: asset.createdAt,
           updatedAt: asset.updatedAt
@@ -165,28 +176,17 @@ export const downloadAsset = async (req: Request, res: Response) => {
       });
     }
 
-    // Determine file path
-    const uploadDir = path.join(process.cwd(), 'uploads');
-    const filePath = path.join(uploadDir, asset.filename);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
+    // Redirect to Cloudinary URL for download
+    if (asset.imageUrl) {
+      res.redirect(asset.imageUrl);
+    } else {
+      res.status(404).json({
         error: {
           code: 'FILE_NOT_FOUND',
-          message: 'File not found on disk'
+          message: 'File URL not found'
         }
       });
     }
-
-    // Set headers
-    res.setHeader('Content-Type', asset.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${asset.originalName}"`);
-    res.setHeader('Content-Length', asset.size.toString());
-
-    // Stream file
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
 
     logger.info('Asset downloaded', {
       assetId: asset._id,
@@ -199,6 +199,68 @@ export const downloadAsset = async (req: Request, res: Response) => {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Failed to download asset'
+      }
+    });
+  }
+};
+
+// Delete asset
+export const deleteAsset = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).userId;
+
+    const asset = await Asset.findById(id);
+    if (!asset) {
+      return res.status(404).json({
+        error: {
+          code: 'ASSET_NOT_FOUND',
+          message: 'Asset not found'
+        }
+      });
+    }
+
+    // Check ownership
+    if (asset.userId.toString() !== userId) {
+      return res.status(403).json({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Access denied'
+        }
+      });
+    }
+
+    // Delete from Cloudinary if publicId exists
+    if (asset.publicId) {
+      try {
+        await deleteFromCloudinary(asset.publicId);
+        logger.info('Deleted from Cloudinary', { publicId: asset.publicId });
+      } catch (cloudinaryError: any) {
+        logger.error('Failed to delete from Cloudinary:', cloudinaryError);
+        // Continue with DB deletion even if Cloudinary fails
+      }
+    }
+
+    // Delete from MongoDB
+    await Asset.findByIdAndDelete(id);
+
+    logger.info('Asset deleted successfully', {
+      assetId: asset._id,
+      userId,
+      publicId: asset.publicId
+    });
+
+    res.json({
+      data: {
+        message: 'Asset deleted successfully'
+      }
+    });
+  } catch (error: any) {
+    logger.error('Delete asset error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to delete asset'
       }
     });
   }
