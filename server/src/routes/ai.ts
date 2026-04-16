@@ -5,6 +5,7 @@ import {
   regenerateImageHandler
 } from '../controllers/aiController';
 import { authenticate } from '../middlewares/auth';
+import { aiRateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
@@ -52,7 +53,7 @@ const validateRegenerateImage = [
 ];
 
 // Module 8 Routes
-router.post('/generate', validateGenerateImage, generateImageHandler);
-router.post('/regenerate', validateRegenerateImage, regenerateImageHandler);
+router.post('/generate', aiRateLimiter, validateGenerateImage, generateImageHandler);
+router.post('/regenerate', aiRateLimiter, validateRegenerateImage, regenerateImageHandler);
 
 export default router;

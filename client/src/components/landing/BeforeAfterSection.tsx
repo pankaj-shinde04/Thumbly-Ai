@@ -27,16 +27,19 @@ const BeforeAfterSection = () => {
               before: 'Plain text prompt',
               after: 'Stunning YouTube thumbnail',
               prompt: '"Finance video about Bitcoin"',
+              image: 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&h=450&fit=crop'
             },
             {
               before: 'Simple description',
               after: 'Eye-catching Instagram post',
               prompt: '"Minimalist coffee aesthetic"',
+              image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=450&fit=crop'
             },
             {
               before: 'Basic idea',
               after: 'Professional reel cover',
               prompt: '"Podcast episode highlight"',
+              image: 'https://images.unsplash.com/photo-1478737270239-2f02b77ac6d5?w=800&h=450&fit=crop'
             },
           ].map((item, index) => (
             <motion.div
@@ -67,19 +70,13 @@ const BeforeAfterSection = () => {
                   </div>
 
                   {/* After - Result */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `linear-gradient(135deg, hsl(${220 + index * 30}, 70%, 30%), hsl(${250 + index * 30}, 60%, 20%))`,
-                      }}
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted group">
+                    <img 
+                      src={item.image} 
+                      alt={item.after}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <span className="text-2xl font-bold text-foreground">Preview {index + 1}</span>
-                        <p className="text-sm text-muted-foreground mt-2">AI Generated</p>
-                      </div>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 </div>
               </div>

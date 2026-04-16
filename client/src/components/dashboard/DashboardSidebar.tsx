@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -10,6 +11,9 @@ import {
   MoreHorizontal,
   Youtube,
   Instagram,
+  Edit2,
+  X,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,6 +24,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import type { DesignSession } from '@/pages/Dashboard';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -29,7 +40,7 @@ interface DashboardSidebarProps {
   activeSessionId: string | null;
   activeView: 'chat' | 'gallery';
   collapsed: boolean;
-  onNewSession: () => void;
+  onNewSession: (platform?: string) => void;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
   onViewChange: (view: 'chat' | 'gallery') => void;
@@ -49,12 +60,114 @@ const DashboardSidebar = ({
   onToggleCollapse,
   isMobile = false,
 }: DashboardSidebarProps) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+
+  // Profile dialog state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(user?.name || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  // Sync editedName when user.name changes
+  useEffect(() => {
+    setEditedName(user?.name || '');
+  }, [user?.name]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleSaveName = async () => {
+    try {
+      setIsSaving(true);
+      await updateUser({ name: editedName });
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Failed to update name:', error);
+      alert(error.message || 'Failed to update name');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    try {
+      setIsSavingAvatar(true);
+      
+      if (!avatarFile) {
+        return;
+      }
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', avatarFile);
+      formData.append('type', 'profile');
+      
+      const token = localStorage.getItem('thumbly_access_token');
+      const uploadResponse = await fetch('http://localhost:4001/api/v1/assets/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData
+      });
+      
+      const uploadData = await uploadResponse.json();
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error?.message || 'Failed to upload avatar');
+      }
+      
+      const avatarUrl = uploadData.data.asset.url;
+      
+      // Update user profile with new avatar URL
+      await updateUser({ avatarUrl });
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    } catch (error: any) {
+      console.error('Failed to update avatar:', error);
+      alert(error.message || 'Failed to update avatar');
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(user?.name || '');
+    setIsEditing(false);
+  };
+
+  const handleProfileClick = () => {
+    setIsProfileOpen(true);
   };
 
   const getPlatformIcon = (platform: string) => {
@@ -101,7 +214,7 @@ const DashboardSidebar = ({
         <Button
           variant="gradient"
           className={cn('w-full', isCollapsed && 'px-0')}
-          onClick={onNewSession}
+          onClick={() => onNewSession('youtube')}
         >
           <Plus className="w-4 h-4" />
           {!isCollapsed && <span>New Design</span>}
@@ -208,46 +321,152 @@ const DashboardSidebar = ({
 
       {/* User Profile */}
       <div className="p-3 border-t border-sidebar-border mt-auto">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                'w-full flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent transition-colors',
-                isCollapsed && 'justify-center'
-              )}
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="gradient-primary text-primary-foreground text-sm">
+        <button
+          onClick={handleProfileClick}
+          className={cn(
+            'w-full flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent transition-colors',
+            isCollapsed && 'justify-center'
+          )}
+        >
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex-shrink-0">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full gradient-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-primary-foreground">
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {user?.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.email}
-                  </p>
+                </span>
+              </div>
+            )}
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* Profile Dialog */}
+      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>My Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+                  {avatarPreview || user?.avatarUrl ? (
+                    <img 
+                      src={avatarPreview || user?.avatarUrl} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full gradient-primary flex items-center justify-center">
+                      <span className="text-2xl font-bold text-primary-foreground">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {!avatarPreview && (
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4 text-primary-foreground" />
+                  </label>
+                )}
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarSelect}
+                  className="hidden"
+                  disabled={isSavingAvatar}
+                />
+              </div>
+              {avatarPreview && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveAvatar}
+                    disabled={isSavingAvatar}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAvatar}
+                    disabled={isSavingAvatar}
+                  >
+                    {isSavingAvatar ? 'Saving...' : 'Save Avatar'}
+                  </Button>
                 </div>
               )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="px-3 py-2">
-              <p className="font-medium text-foreground">{user?.name}</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem key="profile">My Profile</DropdownMenuItem>
-            <DropdownMenuItem key="credits">Usage & Credits</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem key="logout" onClick={handleLogout} className="text-destructive">
+
+            {/* Name Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Name</label>
+              {isEditing ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="flex-1"
+                    disabled={isSaving}
+                  />
+                  <Button size="icon" variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="default" onClick={handleSaveName} disabled={isSaving}>
+                    <Check className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                  <p className="text-sm font-medium">{user?.name}</p>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Email Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Email</label>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={handleLogout}
+            >
               Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 };

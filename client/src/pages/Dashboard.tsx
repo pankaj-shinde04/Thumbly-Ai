@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import ChatArea from '@/components/dashboard/ChatArea';
 import ImageGallery from '@/components/dashboard/ImageGallery';
-import ImageEditor from '@/components/dashboard/ImageEditor';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -250,17 +249,6 @@ const Dashboard = () => {
           />
         )}
       </main>
-
-      {editingImage && (
-        <ImageEditor
-          imageUrl={editingImage}
-          onClose={() => setEditingImage(null)}
-          onSave={(editedUrl) => {
-            // Handle save
-            setEditingImage(null);
-          }}
-        />
-      )}
     </div>
   );
 };
