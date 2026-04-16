@@ -14,6 +14,7 @@ import sessionRoutes from './routes/sessions';
 import messageRoutes from './routes/messages';
 import aiRoutes from './routes/ai';
 import assetRoutes from './routes/assets';
+import galleryRoutes from './routes/gallery';
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/v1/sessions', sessionRoutes);
 app.use('/api/v1/sessions', messageRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/assets', assetRoutes);
+app.use('/api/v1/gallery', galleryRoutes);
 
 // 404 handler
 app.use('*', (req: any, res: any) => {

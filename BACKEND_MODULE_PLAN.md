@@ -303,43 +303,6 @@ Option B (first-class assets):
 ### Frontend Tie-in
 Replace gallery’s derived client state with server data and filters.
 
----
-
-## 11) Module: Editor Save (Optional)
-
-Right now the editor does not create a new image file; it “saves” by returning the same URL.
-
-### Two backend options
-- **Option A (Client-side export)**: client renders to canvas and uploads final PNG via `POST /assets/upload`.
-- **Option B (Server-side render)**: backend takes base image + overlay instructions and produces a rendered asset.
-
-### Suggested endpoint (Option A)
-- `POST /assets/upload` with the exported PNG.
-- Link it back to the session:
-  - `PATCH /sessions/:id` with `thumbnailAssetId`
-
----
-
-## 12) Module: Credits / Usage
-
-### Outcome
-Make “Usage & Credits” real and prevent abuse.
-
-### Model
-- Each generation costs credits.
-- Store ledger rows for auditing.
-
-### Endpoints
-- `GET /billing/usage`
-  - Returns: `{ remainingCredits, monthlyUsed, breakdown }`
-- `POST /billing/topup` (later; integrates payment provider)
-
-### Enforcement
-- Middleware check before AI endpoints.
-- On success, decrement credits (transaction-safe).
-
----
-
 ## 13) Module: Security & Hardening
 
 ### Outcome

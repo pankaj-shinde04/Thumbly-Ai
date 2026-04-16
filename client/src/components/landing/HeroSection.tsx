@@ -139,6 +139,40 @@ const HeroSection = () => {
               </div>
             </div>
 
+            {/* Example Thumbnails */}
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="relative rounded-lg overflow-hidden bg-muted aspect-video group">
+                <img 
+                  src="https://picsum.photos/400/225?random=1" 
+                  alt="YouTube thumbnail example - Finance"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-xs text-white font-medium">Finance Video</p>
+                </div>
+              </div>
+              <div className="relative rounded-lg overflow-hidden bg-muted aspect-video group">
+                <img 
+                  src="https://picsum.photos/400/225?random=2" 
+                  alt="Instagram post example - Travel"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-xs text-white font-medium">Instagram Post</p>
+                </div>
+              </div>
+              <div className="relative rounded-lg overflow-hidden bg-muted aspect-video group">
+                <img 
+                  src="https://picsum.photos/400/225?random=3" 
+                  alt="Gaming thumbnail example"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-xs text-white font-medium">Gaming</p>
+                </div>
+              </div>
+            </div>
+
             {/* Floating Elements */}
             <div className="absolute -top-4 -right-4 animate-float">
               <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-lg">

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { signup, login, getMe, logout, refreshAccessToken } from '../controllers/authController';
 import { authenticate } from '../middlewares/auth';
+import { authRateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
@@ -37,10 +38,10 @@ const validateRefresh = [
 ];
 
 // Routes
-router.post('/signup', validateSignup, signup);
-router.post('/login', validateLogin, login);
+router.post('/signup', authRateLimiter, validateSignup, signup);
+router.post('/login', authRateLimiter, validateLogin, login);
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
-router.post('/refresh', validateRefresh, refreshAccessToken);
+router.post('/refresh', authRateLimiter, validateRefresh, refreshAccessToken);
 
 export default router;

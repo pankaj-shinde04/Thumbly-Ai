@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../lib/logger';
+import { logger } from '../lib/pinoLogger';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -14,14 +14,14 @@ export const errorHandler = (
   next: NextFunction
 ): void => {
   // Log the error
-  logger.error('Error occurred:', {
+  logger.error({
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-  });
+  }, 'Error occurred');
 
   // Default error values
   let statusCode = err.statusCode || 500;
