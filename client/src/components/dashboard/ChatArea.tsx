@@ -7,12 +7,13 @@ import { cn } from '@/lib/utils';
 
 interface ChatAreaProps {
   session: DesignSession | undefined;
+  showPlatformSelector?: boolean;
   onUpdateSession: (updates: Partial<DesignSession>) => void;
   onCreateSession: (platform?: string) => void;
   onEditImage: (url: string) => void;
 }
 
-const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: ChatAreaProps) => {
+const ChatArea = ({ session, showPlatformSelector, onUpdateSession, onCreateSession, onEditImage }: ChatAreaProps) => {
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -72,12 +73,8 @@ const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: Ch
       content: input,
     };
 
-    // Detect platform from prompt
-    const lowerInput = input.toLowerCase();
-    let platform: 'youtube' | 'instagram-post' | 'instagram-reel' = 'youtube';
-    if (lowerInput.includes('instagram') || lowerInput.includes('ig')) {
-      platform = lowerInput.includes('reel') ? 'instagram-reel' : 'instagram-post';
-    }
+    // Use the session's platform or the selected platform from the selector
+    const platform = session?.platform || selectedPlatform;
 
     const newMessages = [...(session?.messages || []), userMessage];
     
@@ -192,7 +189,7 @@ const ChatArea = ({ session, onUpdateSession, onCreateSession, onEditImage }: Ch
   };
 
   // Empty state
-  if (!session) {
+  if (!session || showPlatformSelector) {
     return (
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="text-center max-w-md">

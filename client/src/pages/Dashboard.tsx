@@ -38,6 +38,8 @@ const Dashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPlatformSelector, setShowPlatformSelector] = useState(false);
+  const [platformSelectorKey, setPlatformSelectorKey] = useState(0);
 
   const API_BASE_URL = 'http://localhost:4001/api/v1';
 
@@ -73,6 +75,8 @@ const Dashboard = () => {
         setSessions(mappedSessions);
         if (mappedSessions.length > 0 && !activeSessionId) {
           setActiveSessionId(mappedSessions[0].id);
+          // Load messages for the first session
+          fetchMessages(mappedSessions[0].id);
         }
       }
     } catch (error) {
@@ -82,10 +86,46 @@ const Dashboard = () => {
     }
   };
 
-  const createNewSession = async (platform: string = 'youtube') => {
+  const fetchMessages = async (sessionId: string) => {
     try {
       const token = localStorage.getItem('thumbly_access_token');
-      console.log('Creating session...');
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const backendMessages = data.data.messages || [];
+        const mappedMessages: Message[] = backendMessages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          image: msg.imageAssetId,
+          platform: msg.platform,
+          createdAt: new Date(msg.createdAt)
+        }));
+        updateSession(sessionId, { messages: mappedMessages });
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    }
+  };
+
+  const createNewSession = async (platform?: string) => {
+    // If no platform provided, show platform selector
+    if (!platform) {
+      setShowPlatformSelector(true);
+      setPlatformSelectorKey(prev => prev + 1);
+      setMobileMenuOpen(false);
+      return;
+    }
+    
+    // Create session with selected platform
+    try {
+      const token = localStorage.getItem('thumbly_access_token');
       const response = await fetch(`${API_BASE_URL}/sessions`, {
         method: 'POST',
         headers: {
@@ -102,7 +142,6 @@ const Dashboard = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Session creation response data:', data);
         const newSession: DesignSession = {
           id: data.data.session.id,
           title: data.data.session.title,
@@ -110,11 +149,11 @@ const Dashboard = () => {
           platform: data.data.session.platform || 'youtube',
           createdAt: new Date(data.data.session.createdAt)
         };
-        console.log('Created new session with ID:', newSession.id);
         setSessions([newSession, ...sessions]);
         setActiveSessionId(newSession.id);
         setActiveView('chat');
         setMobileMenuOpen(false);
+        setShowPlatformSelector(false);
       } else {
         console.error('Failed to create session:', await response.json());
       }
@@ -129,6 +168,27 @@ const Dashboard = () => {
     setSessions(
       sessions.map((s) => (s.id === sessionId ? { ...s, ...updates } : s))
     );
+    
+    // Sync platform to backend if it changed
+    if (updates.platform && sessionId) {
+      syncPlatformToBackend(sessionId, updates.platform);
+    }
+  };
+
+  const syncPlatformToBackend = async (sessionId: string, platform: string) => {
+    try {
+      const token = localStorage.getItem('thumbly_access_token');
+      await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ platform })
+      });
+    } catch (error) {
+      console.error('Failed to sync platform to backend:', error);
+    }
   };
 
   const deleteSession = async (sessionId: string) => {
@@ -189,6 +249,9 @@ const Dashboard = () => {
         setActiveSessionId(id);
         setActiveView('chat');
         setMobileMenuOpen(false);
+        setShowPlatformSelector(false);
+        // Load messages for the selected session
+        fetchMessages(id);
       }}
       onDeleteSession={deleteSession}
       onViewChange={(view) => {
@@ -231,11 +294,20 @@ const Dashboard = () => {
       <main className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-14' : ''}`}>
         {activeView === 'chat' ? (
           <ChatArea
-            session={activeSession}
+            key={platformSelectorKey}
+            session={showPlatformSelector ? undefined : activeSession}
+            showPlatformSelector={showPlatformSelector}
             onUpdateSession={(updates) =>
               activeSession && updateSession(activeSession.id, updates)
             }
-            onCreateSession={createNewSession}
+            onCreateSession={(platform) => {
+              if (platform) {
+                setShowPlatformSelector(false);
+                createNewSession(platform);
+              } else {
+                setShowPlatformSelector(true);
+              }
+            }}
             onEditImage={setEditingImage}
           />
         ) : (
@@ -245,6 +317,9 @@ const Dashboard = () => {
             onSelectSession={(id) => {
               setActiveSessionId(id);
               setActiveView('chat');
+              setShowPlatformSelector(false);
+              // Load messages for the selected session
+              fetchMessages(id);
             }}
           />
         )}

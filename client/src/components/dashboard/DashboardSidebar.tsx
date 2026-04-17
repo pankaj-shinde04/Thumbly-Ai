@@ -214,7 +214,7 @@ const DashboardSidebar = ({
         <Button
           variant="gradient"
           className={cn('w-full', isCollapsed && 'px-0')}
-          onClick={() => onNewSession('youtube')}
+          onClick={() => onNewSession()}
         >
           <Plus className="w-4 h-4" />
           {!isCollapsed && <span>New Design</span>}

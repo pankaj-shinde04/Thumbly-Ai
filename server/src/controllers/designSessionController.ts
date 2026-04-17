@@ -201,7 +201,7 @@ export const updateSession = async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
     const userId = (req as any).userId;
-    const { title, status } = req.body;
+    const { title, status, platform } = req.body;
 
     // Find session
     const session = await DesignSession.findById(sessionId);
@@ -229,13 +229,16 @@ export const updateSession = async (req: Request, res: Response) => {
     if (status !== undefined && ['active', 'archived', 'deleted'].includes(status)) {
       session.status = status;
     }
+    if (platform !== undefined && ['youtube', 'instagram-post', 'instagram-reel'].includes(platform)) {
+      session.platform = platform;
+    }
 
     await session.save();
 
     logger.info('Design session updated', {
       sessionId: session._id.toString(),
       userId,
-      updates: { title, status }
+      updates: { title, status, platform }
     });
 
     res.json({
