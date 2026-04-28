@@ -253,9 +253,9 @@ const ChatArea = ({ session, showPlatformSelector, onUpdateSession, onCreateSess
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-4 md:space-y-6 scrollbar-thin min-h-0">
         <AnimatePresence>
           {session.messages.map((message) => (
             <motion.div

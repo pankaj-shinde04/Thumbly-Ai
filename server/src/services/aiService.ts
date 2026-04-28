@@ -29,6 +29,7 @@ interface GenerateImageOptions {
   size?: string;
   n?: number;
   style?: string;
+  platform?: string;
   userId?: string;
   sessionId?: string;
 }
@@ -43,10 +44,10 @@ interface GeneratedImage {
  */
 export const generateImage = async (options: GenerateImageOptions): Promise<GeneratedImage[]> => {
   try {
-    const { prompt, size = '1024x1024', n = 1, style = 'realistic', userId = 'default-user', sessionId } = options;
+    const { prompt, size = '1024x1024', n = 1, style = 'realistic', platform = 'youtube', userId = 'default-user', sessionId } = options;
 
-    // Enhance prompt based on style
-    const enhancedPrompt = enhancePrompt(prompt, style);
+    // Use user's prompt directly without enhancement to get better results
+    const enhancedPrompt = prompt;
 
     logger.info(`Generating image with prompt: ${enhancedPrompt}`);
     logger.info(`User prompt: ${prompt}`);
@@ -166,18 +167,81 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
 };
 
 /**
- * Enhance prompt based on style
+ * Platform-specific prompt templates
  */
-const enhancePrompt = (prompt: string, style: string): string => {
-  const styleEnhancements: Record<string, string> = {
-    realistic: 'photorealistic, high quality, professional photography, detailed, 8K',
-    artistic: 'artistic, creative, vibrant colors, artistic style, digital art',
-    cartoon: 'cartoon style, colorful, animated, fun, illustration',
-    minimalist: 'minimalist, clean, simple, modern, elegant'
-  };
+const platformTemplates = {
+  youtube: {
+    aspectRatio: '16:9',
+    composition: 'wide horizontal layout, subject positioned on left or right third, bold text overlay space on opposite side, high contrast for thumbnail visibility',
+    lighting: 'dramatic lighting, rim lighting, neon accents, high contrast, vibrant colors that pop on dark backgrounds',
+    quality: 'ultra high definition, 8K, professional photography quality, sharp focus, high saturation'
+  },
+  'instagram-post': {
+    aspectRatio: '1:1',
+    composition: 'centered subject, balanced framing, symmetrical or rule-of-thirds, clean negative space, minimal distractions',
+    lighting: 'soft natural lighting, golden hour tones, bright and airy, consistent color palette, professional studio lighting',
+    quality: 'high definition, sharp details, clean edges, professional photography, Instagram-optimized colors'
+  },
+  'instagram-reel': {
+    aspectRatio: '9:16',
+    composition: 'vertical portrait layout, subject centered or slightly above center, top space for text overlay, bottom space for captions, dynamic angles',
+    lighting: 'dramatic vertical lighting, gradient backgrounds, neon effects, high contrast for mobile viewing, vibrant colors',
+    quality: 'high definition, sharp focus, optimized for mobile display, professional quality, vivid colors'
+  }
+};
 
-  const enhancement = styleEnhancements[style] || '';
-  return enhancement ? `${prompt}, ${enhancement}` : prompt;
+/**
+ * Negative constraints to avoid common issues
+ */
+const negativeConstraints = [
+  'no blur',
+  'no distortion',
+  'no watermark',
+  'no text artifacts',
+  'no misspelled words',
+  'no low resolution',
+  'no pixelation',
+  'no bad anatomy',
+  'no out of focus',
+  'no poor quality',
+  'no grain',
+  'no noise',
+  'no chromatic aberration',
+  'no motion blur',
+  'no camera shake',
+  'no overexposure',
+  'no underexposure',
+  'no washed out colors',
+  'no muted colors',
+  'no desaturated',
+  'no black and white unless specified'
+];
+
+/**
+ * Style-specific enhancements
+ */
+const styleEnhancements: Record<string, string> = {
+  realistic: 'photorealistic, hyperrealistic, ultra realistic, professional photography, DSLR quality, studio lighting, detailed texture, natural skin tones, accurate colors',
+  artistic: 'digital art, artistic interpretation, creative composition, expressive style, vibrant colors, artistic rendering, painterly quality, creative interpretation',
+  cartoon: 'cartoon style, animated, colorful, fun illustration, clean lines, cel shading, vibrant colors, expressive characters, animation quality',
+  minimalist: 'minimalist design, clean lines, simple composition, modern aesthetic, elegant, understated, sophisticated, plenty of negative space',
+  cinematic: 'cinematic quality, movie poster style, dramatic lighting, film grain, professional cinematography, color graded, atmospheric, epic composition',
+  neon: 'neon aesthetics, cyberpunk style, glowing effects, vibrant neon colors, futuristic, dark background with bright accents, high contrast, LED lighting',
+  corporate: 'professional corporate style, clean business aesthetic, trustworthy, polished, modern business photography, neutral colors, professional lighting',
+  gaming: 'gaming aesthetic, vibrant colors, dynamic action, gaming poster style, high energy, esports quality, bold colors, gaming UI elements'
+};
+
+/**
+ * Enhance prompt based on platform, style, and user input
+ */
+const enhancePrompt = (prompt: string, style: string = 'realistic', platform: string = 'youtube'): string => {
+  // Minimal enhancement to avoid confusing the AI
+  const styleConfig = styleEnhancements[style] || styleEnhancements.realistic;
+  
+  // Just add style and quality, keep user's original intent clear
+  const enhancedPrompt = `${prompt}, ${styleConfig}, high quality, sharp focus`;
+  
+  return enhancedPrompt;
 };
 
 /**

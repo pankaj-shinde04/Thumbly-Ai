@@ -122,7 +122,8 @@ export const createMessage = async (req: Request, res: Response) => {
           sessionId,
           userId,
           style: 'realistic',
-          size: '1024x1024'
+          size: '1024x1024',
+          platform
         });
 
         // Create assistant message with generated image
